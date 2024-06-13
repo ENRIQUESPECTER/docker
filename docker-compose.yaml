@@ -1,0 +1,44 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:12.5
+    container_name: postgres
+    hostname: postgres
+    restart: always
+    mem_limit: "2g"
+    cpus: 1.0
+    volumes:
+      - /opt/servicios/data/postgres/postgres:/var/lib/postgresql/data
+      - /opt/servicios/docker-compose/siij-compose-postgres/scripts/sql/init-users.sql:/docker-entrypoint-initdb.d/init-users.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - siij-net
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: evo100518
+
+  init-postgres:
+    image: postgres:12.5
+    container_name: init-postgres
+    depends_on:
+      - postgres
+    networks:
+      - siij-net
+    volumes:
+      - /opt/servicios/docker-compose/siij-compose-postgres/scripts:/scripts
+    command: |
+      sh -c "
+      if [ ! -f /scripts/initialized.txt ]; then
+        chmod +x /scripts/init-postgres.sh;
+        /scripts/init-postgres.sh;
+        touch /scripts/initialized.txt;
+      else
+        echo 'Initialization script already executed.';
+      fi
+      "
+
+networks:
+  siij-net:
+    external: true
